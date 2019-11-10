@@ -56,10 +56,13 @@ def serialize_multiple_receipts(receipts):
 def serialize_receipt(receipt):
     from django_afip import models
     f = _wsfe_factory()
-    subtotals = models.Receipt.objects.filter(pk=receipt.pk).aggregate(
-        vat=Sum('vat__amount'),
-        taxes=Sum('taxes__amount'),
-    )
+    # subtotals = models.Receipt.objects.filter(pk=receipt.pk).aggregate(
+    #     vat=Sum('vat__amount'),
+    #     taxes=Sum('taxes__amount'),
+    # )
+    vats = models.Vat.objects.filter(receipt=receipt).aggregate(vat=Sum('amount'))
+    subtotals = models.Tax.objects.filter(receipt=receipt).aggregate(taxes=Sum('amount'))
+    subtotals.update(vats)
 
     serialized = f.FECAEDetRequest(
         Concepto=receipt.concept.code,
